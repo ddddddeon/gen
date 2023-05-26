@@ -118,22 +118,37 @@ impl Project {
         }
     }
 
-    pub fn create_makefile(&self) -> anyhow::Result<()> {
-        let makefile_name = match self.kind {
-            ProjectKind::Library => "Makefile.lib",
-            ProjectKind::Executable => "Makefile.bin",
-        };
+    pub fn template(
+        &self,
+        target_name: &str,
+        from_path: &Path,
+        to_path: &Path,
+    ) -> anyhow::Result<()> {
+        let mut handlebars = Handlebars::new();
+        handlebars.register_template_file(target_name, from_path)?;
+        let rendered_makefile = handlebars.render(target_name, &self)?;
+        fs::File::create(to_path)?;
+        fs::write(to_path, rendered_makefile)?;
+        println!("Created file {}", to_path.display());
 
+        Ok(())
+    }
+
+    pub fn create_makefile(&self) -> anyhow::Result<()> {
         if let (Some(template_dir), Some(project_dir)) = (&self.template_dir, &self.project_dir) {
-            let mut handlebars = Handlebars::new();
-            handlebars.register_template_file("Makefile", template_dir.join(makefile_name))?;
-            let rendered_makefile = handlebars.render("Makefile", &self)?;
-            fs::File::create(project_dir.join("Makefile"))?;
-            fs::write(project_dir.join("Makefile"), rendered_makefile)?;
-            println!("Created file {}", project_dir.join("Makefile").display());
+            let makefile_name = match self.kind {
+                ProjectKind::Library => "Makefile.lib",
+                ProjectKind::Executable => "Makefile.bin",
+            };
+            self.template(
+                "Makefile",
+                &template_dir.join(makefile_name),
+                &project_dir.join("Makefile"),
+            )?;
+
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Template or project directory not set"))
+            Err(anyhow::anyhow!("Project directory not set"))
         }
     }
 
@@ -170,15 +185,11 @@ impl Project {
     pub fn create_cpp_project(&self) -> anyhow::Result<()> {
         if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
             if self.kind == ProjectKind::Executable {
-                let mut handlebars = Handlebars::new();
-                handlebars.register_template_file(
+                self.template(
                     "main.cpp",
-                    template_dir.join("src").join("main.cpp"),
+                    &template_dir.join("src").join("main.cpp"),
+                    &project_dir.join("src").join("main.cpp"),
                 )?;
-                let rendered_makefile = handlebars.render("main.cpp", &self)?;
-                fs::File::create(project_dir.join("src").join("main.cpp"))?;
-                fs::write(project_dir.join("src").join("main.cpp"), rendered_makefile)?;
-                println!("Created file {}", project_dir.join("main.cpp").display());
             }
         }
 
@@ -209,15 +220,11 @@ impl Project {
             }
         }
         if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
-            let mut handlebars = Handlebars::new();
-            handlebars.register_template_file("manifest.txt", template_dir.join("manifest.txt"))?;
-            let rendered_makefile = handlebars.render("manifest.txt", &self)?;
-            fs::File::create(project_dir.join("manifest.txt"))?;
-            fs::write(project_dir.join("manifest.txt"), rendered_makefile)?;
-            println!(
-                "Created file {}",
-                project_dir.join("manifest.txt").display()
-            );
+            self.template(
+                "manifest.txt",
+                &template_dir.join("manifest.txt"),
+                &project_dir.join("manifest.txt"),
+            )?;
         } else {
             return Err(anyhow::anyhow!("Template or project directory not set"));
         }
