@@ -70,7 +70,6 @@ impl Project {
 
         project.template_dir = Some(template_dir);
         project.project_dir = Some(project_dir);
-
         project
     }
 
@@ -111,7 +110,6 @@ impl Project {
                     return Err(error.into());
                 }
             }
-
             Ok(())
         } else {
             Err(anyhow::anyhow!("Project directory not set"))
@@ -130,7 +128,6 @@ impl Project {
         fs::File::create(to_path)?;
         fs::write(to_path, rendered_makefile)?;
         println!("Created file {}", to_path.display());
-
         Ok(())
     }
 
@@ -145,7 +142,6 @@ impl Project {
                 &template_dir.join(makefile_name),
                 &project_dir.join("Makefile"),
             )?;
-
             Ok(())
         } else {
             Err(anyhow::anyhow!("Project directory not set"))
@@ -178,7 +174,6 @@ impl Project {
                 );
             }
         }
-
         Ok(())
     }
 
@@ -192,7 +187,6 @@ impl Project {
                 )?;
             }
         }
-
         Ok(())
     }
 
@@ -228,7 +222,6 @@ impl Project {
         } else {
             return Err(anyhow::anyhow!("Template or project directory not set"));
         }
-
         Ok(())
     }
 
@@ -272,7 +265,6 @@ impl Project {
                 project_dir.join("src").join("lib.rs").display()
             );
         }
-
         Ok(())
     }
 
@@ -296,7 +288,6 @@ impl Project {
 
         self.create_gitignore()?;
         self.create_makefile()?;
-
         Ok(())
     }
 }
