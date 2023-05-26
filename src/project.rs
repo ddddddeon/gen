@@ -25,16 +25,23 @@ pub struct Project {
     kind: ProjectKind,
     project_dir: Option<&'static Path>,
     template_dir: Option<&'static Path>,
+    domain: Option<String>,
 }
 
 impl Project {
-    pub fn new(name: &'static str, lang: Lang, kind: ProjectKind) -> Project {
+    pub fn new(
+        name: &'static str,
+        lang: Lang,
+        kind: ProjectKind,
+        domain: Option<String>,
+    ) -> Project {
         let mut project = Project {
             name: String::from(name),
             lang,
             kind,
             project_dir: None,
             template_dir: None,
+            domain,
         };
 
         let project_dir = Path::new(name);
@@ -178,9 +185,14 @@ impl Project {
     }
 
     pub fn create_java_project(&self) -> anyhow::Result<()> {
+        let domain = match &self.domain {
+            Some(domain) => domain,
+            None => "com.example",
+        };
+
         let output = Command::new("mvn")
             .arg("archetype:generate")
-            .arg(format!("-DgroupId=com.ddddddeon.{}", self.name))
+            .arg(format!("-DgroupId={}.{}", domain, self.name))
             .arg(format!("-DartifactId={}", self.name))
             .arg("-DarchetypeArtifactId=maven-archetype-quickstart")
             .arg("-DinteractiveMode=false")

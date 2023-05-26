@@ -2,12 +2,14 @@ use clap::Parser;
 
 #[derive(Parser)]
 struct Args {
-    #[arg(index = 1)]
+    #[arg(index = 1, short, long)]
     name: String,
-    #[arg(index = 2)]
+    #[arg(index = 2, short, long)]
     lang: String,
-    #[arg(index = 3)]
+    #[arg(index = 3, short, long)]
     kind: Option<String>,
+    #[arg(short, long)]
+    domain: Option<String>,
 }
 
 use gen::project::{Lang, Project, ProjectKind};
@@ -25,13 +27,17 @@ fn main() -> anyhow::Result<()> {
         _ => panic!("Invalid language"),
     };
 
+    if lang == Lang::Java && args.domain.is_none() {
+        panic!("Java project requires domain name! Use --domain option.");
+    }
+
     let kind = match args.kind.as_deref() {
         Some("bin") | Some("binary") | Some("exe") | Some("executable") => ProjectKind::Executable,
         Some("lib") | Some("library") => ProjectKind::Library,
         _ => ProjectKind::Executable,
     };
 
-    let project = Project::new(name, lang, kind);
+    let project = Project::new(name, lang, kind, args.domain);
     project.generate()?;
     Ok(())
 }
