@@ -1,0 +1,20 @@
+NAME={{ name }}
+DOMAIN=com.ddddddeon
+LIBS=
+JAVA_OPTS=
+CLASS_DIR=target/classes
+SRC_DIR=src
+SRC_FILES=$(wildcard $(SRC_DIR)/**/*.java)
+MANIFEST=manifest.txt
+
+.PHONY: $(NAME)
+$(NAME): build
+	java -jar $(CLASS_DIR)/$(NAME).jar
+
+.PHONY: build
+build: 
+	set -e; \
+	rm $(SRC_DIR)/*~ $(SRC_DIR)/\#* 2>/dev/null || true; \
+	if [ ! -d $(CLASS_DIR) ]; then mkdir -p $(CLASS_DIR); fi; \
+    mvn compile; \
+	jar cfm $(CLASS_DIR)/$(NAME).jar $(MANIFEST) -C $(CLASS_DIR)/ .;

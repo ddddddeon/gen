@@ -1,0 +1,46 @@
+NAME={{ name }}
+LIBS=
+CFLAGS=-g -Wall -Wextra -fuse-ld=lld $(LIBS)
+
+CC=clang++
+OUTFILE=bin/$(NAME)
+INFILES=$(wildcard src/*.cpp)
+
+$(NAME):
+	set -e; \
+	rm src/*~ src/\#* 2>/dev/null || true; \
+	if [ ! -d bin ]; then mkdir bin; fi; \
+	$(CC) -o $(OUTFILE) $(INFILES) $(CFLAGS)
+
+clean:	find-bin
+	@rm -rf bin;
+
+find-bin:
+	@[ -d bin ];
+
+install:
+	@mv bin/$(NAME) /usr/bin/$(NAME); \
+	chmod a+x /usr/bin/$(NAME); \
+	echo "[OK] installed to /usr/bin/$(NAME)";
+
+format:
+	@clang-format -i -style=google **/*.cpp **/*.h
+
+tidy:
+	@clang-tidy --checks=google-* -header-filter=.* **/*.cpp **/*.h
+
+lint:
+	@cpplint **/*.cpp **/*.h
+
+check:
+	@valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes ./bin/$(NAME)
+
+trace:
+	@strace ./bin/$(NAME)
+
+sloc:
+	@git ls-files | xargs wc -l
+
+all: $(NAME) find-bin install
+
+rebuild: clean $(NAME) install
