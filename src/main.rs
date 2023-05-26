@@ -2,11 +2,11 @@ use clap::Parser;
 
 #[derive(Parser)]
 struct Args {
-    #[arg(index = 1, short, long)]
+    #[arg(index = 1)]
     name: String,
-    #[arg(index = 2, short, long)]
+    #[arg(index = 2)]
     lang: String,
-    #[arg(index = 3, short, long)]
+    #[arg(index = 3)]
     kind: Option<String>,
     #[arg(short, long)]
     domain: Option<String>,
