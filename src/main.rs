@@ -3,9 +3,9 @@ use clap::Parser;
 #[derive(Parser)]
 struct Args {
     #[arg(index = 1)]
-    name: String,
-    #[arg(index = 2)]
     lang: String,
+    #[arg(index = 2)]
+    name: String,
     #[arg(index = 3)]
     kind: Option<String>,
     #[arg(short, long)]
@@ -28,7 +28,8 @@ fn main() -> anyhow::Result<()> {
     };
 
     if lang == Lang::Java && args.domain.is_none() {
-        panic!("Java project requires domain name! Use --domain option.");
+        println!("Java project requires domain name! Use --domain option.");
+        std::process::exit(1);
     }
 
     let kind = match args.kind.as_deref() {

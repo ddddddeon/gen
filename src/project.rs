@@ -170,14 +170,15 @@ impl Project {
     pub fn create_cpp_project(&self) -> anyhow::Result<()> {
         if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
             if self.kind == ProjectKind::Executable {
-                fs::copy(
+                let mut handlebars = Handlebars::new();
+                handlebars.register_template_file(
+                    "main.cpp",
                     template_dir.join("src").join("main.cpp"),
-                    project_dir.join("src").join("main.cpp"),
                 )?;
-                println!(
-                    "Created file {}",
-                    project_dir.join("src").join("main.cpp").display()
-                );
+                let rendered_makefile = handlebars.render("main.cpp", &self)?;
+                fs::File::create(project_dir.join("src").join("main.cpp"))?;
+                fs::write(project_dir.join("src").join("main.cpp"), rendered_makefile)?;
+                println!("Created file {}", project_dir.join("main.cpp").display());
             }
         }
 
