@@ -1,13 +1,27 @@
+use anyhow::anyhow;
 use handlebars::Handlebars;
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::str::FromStr;
 
 #[derive(Debug, Serialize, Eq, PartialEq, Clone, Copy)]
 pub enum ProjectKind {
     Library,
     Executable,
+}
+
+impl FromStr for ProjectKind {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "bin" | "binary" | "exe" | "executable" => Ok(ProjectKind::Executable),
+            "lib" | "library" => Ok(ProjectKind::Library),
+            _ => Ok(ProjectKind::Executable),
+        }
+    }
 }
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy, Serialize)]
@@ -16,6 +30,20 @@ pub enum Lang {
     C,
     Cpp,
     Java,
+}
+
+impl FromStr for Lang {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "rust" | "rs" => Ok(Lang::Rust),
+            "c" => Ok(Lang::C),
+            "cpp" | "c++" | "cc" => Ok(Lang::Cpp),
+            "java" => Ok(Lang::Java),
+            _ => Err(anyhow!("Unknown language {}", s)),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
