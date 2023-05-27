@@ -1,5 +1,5 @@
 # gen
-Generate a new project from a template
+Generate project directory structure and boilerplate
 
 ## Installation
 ```sh
