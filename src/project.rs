@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use handlebars::Handlebars;
 use serde::Serialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
 
@@ -51,8 +51,8 @@ pub struct Project {
     name: String,
     lang: Lang,
     kind: ProjectKind,
-    project_dir: Option<&'static Path>,
-    template_dir: Option<&'static Path>,
+    project_dir: Option<PathBuf>,
+    template_dir: Option<PathBuf>,
     domain: Option<String>,
 }
 
@@ -72,7 +72,7 @@ impl Project {
             domain,
         };
 
-        let project_dir = Path::new(name);
+        let project_dir = Path::new(name).to_path_buf();
         if project_dir.is_dir() {
             println!(
                 "Directory {} already exists! Refusing to overwrite",
@@ -81,11 +81,16 @@ impl Project {
             std::process::exit(1);
         }
 
+        let gen_config_dir = Path::new(&std::env::var("HOME").expect("Could not find $HOME"))
+            .join(".config/gen/templates")
+            .display()
+            .to_string();
+
         let template_dir = match project.lang {
-            Lang::Rust => Path::new("~/.config/gen/templates/rust"),
-            Lang::C => Path::new("~/.config/gen/templates/c"),
-            Lang::Cpp => Path::new("~/.config/gen/templates/cpp"),
-            Lang::Java => Path::new("~/.config/gen/templates/java"),
+            Lang::Rust => Path::new(&gen_config_dir).join("rust"),
+            Lang::C => Path::new(&gen_config_dir).join("c"),
+            Lang::Cpp => Path::new(&gen_config_dir).join("cpp"),
+            Lang::Java => Path::new(&gen_config_dir).join("java"),
         };
 
         if !template_dir.is_dir() {
