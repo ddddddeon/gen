@@ -6,7 +6,7 @@ Generate project directory structure and boilerplate
 git clone https://github.com/ddddddeon/gen
 cd gen
 make release
-sudo make install
+make install
 ```
 
 ## Usage

@@ -26,7 +26,12 @@ clean:
 
 .PHONY: install
 install:
-	mv target/release/$(NAME) /usr/bin/
+	@set -e
+	@if [ $$(id -u) -eq 0 ]; then echo "Do not run as root"; exit 1; fi
+
+	cargo install --path .
+	if [ ! -d ~/.config/gen/ ]; then mkdir ~/.config/gen; fi
+	cp -r templates ~/.config/gen/
 
 .PHONY: publish
 publish:

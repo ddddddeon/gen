@@ -82,10 +82,10 @@ impl Project {
         }
 
         let template_dir = match project.lang {
-            Lang::Rust => Path::new("templates/rust"),
-            Lang::C => Path::new("templates/c"),
-            Lang::Cpp => Path::new("templates/cpp"),
-            Lang::Java => Path::new("templates/java"),
+            Lang::Rust => Path::new("~/.config/gen/templates/rust"),
+            Lang::C => Path::new("~/.config/gen/templates/c"),
+            Lang::Cpp => Path::new("~/.config/gen/templates/cpp"),
+            Lang::Java => Path::new("~/.config/gen/templates/java"),
         };
 
         if !template_dir.is_dir() {
