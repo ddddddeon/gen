@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use handlebars::Handlebars;
 use serde::Serialize;
-use std::fs;
+use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
@@ -158,7 +158,7 @@ impl Project {
         let mut handlebars = Handlebars::new();
         handlebars.register_template_file(target_name, from_path)?;
         let rendered_makefile = handlebars.render(target_name, &self)?;
-        fs::File::create(to_path)?;
+        File::create(to_path)?;
         fs::write(to_path, rendered_makefile)?;
         println!("Created file {}", to_path.display());
         Ok(())
@@ -194,8 +194,40 @@ impl Project {
         }
     }
 
+    pub fn create_clang_format(&self) -> anyhow::Result<()> {
+        if let Some(project_dir) = &self.project_dir {
+            let output = Command::new("clang-format")
+                .arg("-style={BasedOnStyle: Google, IndentWidth: 4}")
+                .arg("--dump-config")
+                .stdout(File::create(project_dir.join(".clang-format"))?)
+                .output();
+
+            match output {
+                Ok(output) => {
+                    if output.stderr.len() > 0 {
+                        println!("{}", String::from_utf8(output.stderr)?);
+                        return Err(anyhow::anyhow!("Error creating .clang-format file"));
+                    }
+
+                    println!(
+                        "Created file {}",
+                        project_dir.join(".clang-format").display()
+                    );
+                    return Ok(());
+                }
+                Err(error) => {
+                    println!("{}", error.to_string());
+                    return Err(error.into());
+                }
+            }
+        } else {
+            Err(anyhow::anyhow!("Template or project directory not set"))
+        }
+    }
+
     pub fn create_c_project(&self) -> anyhow::Result<()> {
         if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
+            self.create_clang_format()?;
             if self.kind == ProjectKind::Executable {
                 fs::copy(
                     template_dir.join("src").join("main.c"),
@@ -206,12 +238,15 @@ impl Project {
                     project_dir.join("src").join("main.c").display()
                 );
             }
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("Template or project directory not set"))
         }
-        Ok(())
     }
 
     pub fn create_cpp_project(&self) -> anyhow::Result<()> {
         if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
+            self.create_clang_format()?;
             if self.kind == ProjectKind::Executable {
                 self.template(
                     "main.cpp",
@@ -219,8 +254,10 @@ impl Project {
                     &project_dir.join("src").join("main.cpp"),
                 )?;
             }
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("Template or project directory not set"))
         }
-        Ok(())
     }
 
     pub fn create_java_project(&self) -> anyhow::Result<()> {
@@ -292,7 +329,7 @@ impl Project {
                 );
             }
 
-            fs::File::create(project_dir.join("src").join("lib.rs"))?;
+            File::create(project_dir.join("src").join("lib.rs"))?;
             println!(
                 "Created file {}",
                 project_dir.join("src").join("lib.rs").display()
