@@ -1,0 +1,10 @@
+NAME={{ name }}
+
+.PHONY: $(NAME)
+
+$(NAME):
+	go build -o bin/$(NAME) && \
+	./bin/$(NAME)
+
+install:
+	go install

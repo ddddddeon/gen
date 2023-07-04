@@ -29,6 +29,7 @@ pub enum Lang {
     Rust,
     C,
     Cpp,
+    Go,
     Java,
 }
 
@@ -41,6 +42,7 @@ impl FromStr for Lang {
             "c" => Ok(Lang::C),
             "cpp" | "c++" | "cc" => Ok(Lang::Cpp),
             "java" => Ok(Lang::Java),
+            "go" => Ok(Lang::Go),
             _ => Err(anyhow!("Unknown language {}", s)),
         }
     }
@@ -90,6 +92,7 @@ impl Project {
             Lang::Rust => Path::new(&gen_config_dir).join("rust"),
             Lang::C => Path::new(&gen_config_dir).join("c"),
             Lang::Cpp => Path::new(&gen_config_dir).join("cpp"),
+            Lang::Go => Path::new(&gen_config_dir).join("go"),
             Lang::Java => Path::new(&gen_config_dir).join("java"),
         };
 
@@ -116,6 +119,28 @@ impl Project {
 
     pub fn kind(&self) -> &ProjectKind {
         &self.kind
+    }
+
+    pub fn get_default_domain(&self) -> anyhow::Result<String> {
+        match &self.domain {
+            Some(domain) => Ok(domain.to_string()),
+            None => {
+                let domain_file = match self.lang {
+                    Lang::Go | Lang::Java => Path::new(&self.template_dir.as_ref().unwrap())
+                        .join("domain")
+                        .display()
+                        .to_string(),
+                    _ => String::from(""),
+                };
+
+                if domain_file.is_empty() {
+                    Err(anyhow!("Could not find domain file"))
+                } else {
+                    let domain = fs::read_to_string(domain_file)?;
+                    Ok(domain.trim().to_string())
+                }
+            }
+        }
     }
 
     pub fn create_dir(&self) -> anyhow::Result<()> {
@@ -204,7 +229,7 @@ impl Project {
 
             match output {
                 Ok(output) => {
-                    if output.stderr.len() > 0 {
+                    if output.stderr.is_empty() {
                         println!("{}", String::from_utf8(output.stderr)?);
                         return Err(anyhow::anyhow!("Error creating .clang-format file"));
                     }
@@ -213,11 +238,11 @@ impl Project {
                         "Created file {}",
                         project_dir.join(".clang-format").display()
                     );
-                    return Ok(());
+                    Ok(())
                 }
                 Err(error) => {
                     println!("{}", error.to_string());
-                    return Err(error.into());
+                    Err(error.into())
                 }
             }
         } else {
@@ -260,10 +285,61 @@ impl Project {
         }
     }
 
+    pub fn create_go_project(&self) -> anyhow::Result<()> {
+        let domain = match &self.domain {
+            Some(domain) => domain.to_owned(),
+            None => {
+                let default_domain = self.get_default_domain()?;
+                println!(
+                    "No domain specified, using default domain {}",
+                    default_domain
+                );
+                default_domain
+            }
+        };
+
+        let output = Command::new("go")
+            .arg("mod")
+            .arg("init")
+            .arg(format!("{}/{}", domain, self.name))
+            .current_dir(self.project_dir.as_ref().unwrap())
+            .output();
+
+        match output {
+            Ok(output) => {
+                println!("{}", String::from_utf8_lossy(&output.stdout));
+                println!("{}", String::from_utf8_lossy(&output.stderr));
+            }
+            Err(error) => {
+                println!("{}", error.to_string());
+            }
+        }
+
+        if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
+            if self.kind == ProjectKind::Executable {
+                self.template(
+                    "main.go",
+                    &template_dir.join("main.go"),
+                    &project_dir.join("main.go"),
+                )?;
+            }
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("Template or project directory not set"))
+        }
+    }
+
     pub fn create_java_project(&self) -> anyhow::Result<()> {
         let domain = match &self.domain {
-            Some(domain) => domain,
-            None => "com.example",
+            Some(domain) => domain.to_owned(),
+            None => {
+                let default_domain = self.get_default_domain()?;
+                println!(
+                    "No domain specified, using default domain {}",
+                    default_domain
+                );
+                default_domain
+            }
         };
 
         let output = Command::new("mvn")
@@ -353,6 +429,10 @@ impl Project {
             }
             Lang::Rust => {
                 self.create_rust_project()?;
+            }
+            Lang::Go => {
+                self.create_dir()?;
+                self.create_go_project()?;
             }
         }
 

@@ -1,0 +1,9 @@
+NAME={{ name }}
+
+.PHONY: $(NAME)
+
+$(NAME):
+    go build && go test
+
+install:
+	go install
