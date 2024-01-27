@@ -155,17 +155,19 @@ impl Project {
                 }
             }
 
-            match fs::create_dir(project_dir.join("src")) {
-                Ok(()) => {
-                    println!("Created dir  {}", project_dir.join("src").display());
-                }
-                Err(error) => {
-                    println!(
-                        "Error creating directory {}: {:?}",
-                        project_dir.join("src").display(),
-                        error
-                    );
-                    return Err(error.into());
+            if self.lang != Lang::Go {
+                match fs::create_dir(project_dir.join("src")) {
+                    Ok(()) => {
+                        println!("Created dir  {}", project_dir.join("src").display());
+                    }
+                    Err(error) => {
+                        println!(
+                            "Error creating directory {}: {:?}",
+                            project_dir.join("src").display(),
+                            error
+                        );
+                        return Err(error.into());
+                    }
                 }
             }
             Ok(())
@@ -241,7 +243,7 @@ impl Project {
                     Ok(())
                 }
                 Err(error) => {
-                    println!("{}", error.to_string());
+                    println!("{}", error);
                     Err(error.into())
                 }
             }
@@ -311,7 +313,7 @@ impl Project {
                 println!("{}", String::from_utf8_lossy(&output.stderr));
             }
             Err(error) => {
-                println!("{}", error.to_string());
+                println!("{}", error);
             }
         }
 
@@ -356,7 +358,7 @@ impl Project {
                 println!("{}", String::from_utf8_lossy(&output.stderr));
             }
             Err(error) => {
-                println!("{}", error.to_string());
+                println!("{}", error);
             }
         }
         if let (Some(project_dir), Some(template_dir)) = (&self.project_dir, &self.template_dir) {
@@ -389,7 +391,7 @@ impl Project {
                 println!("{}", String::from_utf8_lossy(&output.stderr));
             }
             Err(error) => {
-                println!("{}", error.to_string());
+                println!("{}", error);
             }
         }
 
